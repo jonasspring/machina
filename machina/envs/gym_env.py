@@ -34,6 +34,7 @@ This code is taken from rllab which is MIT-licensed.
 
 import gym
 from machina import logger
+import gym.wrappers
 
 
 class CappedCubicVideoSchedule(object):

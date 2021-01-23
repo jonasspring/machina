@@ -9,9 +9,9 @@ import gym
 import numpy as np
 import torch
 import torch.multiprocessing as mp
-import rospy
 
 from machina.utils import cpu_mode
+import rospy
 
 
 LARGE_NUMBER = 100000000
@@ -42,6 +42,8 @@ def one_epi(env, pol, deterministic=False, prepro=None):
         dones = []
         a_is = []
         e_is = []
+        print("rospy", rospy.is_shutdown())
+        rospy.init_node("sampler_node")
         o = env.reset()
         pol.reset()
         done = False
@@ -119,7 +121,7 @@ def mp_sample(pol, env, max_steps, max_epis, n_steps_global, n_epis_global, epis
     np.random.seed(seed + process_id)
     torch.manual_seed(seed + process_id)
     torch.set_num_threads(1)
-    print(rospy.is_shutdown())
+    print("rospy", rospy.is_shutdown())
 
     while True:
         time.sleep(0.1)
@@ -165,20 +167,17 @@ class EpiSampler(object):
         self.deterministic_flag = torch.tensor(
             0, dtype=torch.uint8).share_memory_()
 
-        self.epis = []
+        self.epis = mp.Manager().list()
         self.processes = []
-        self.prepro = prepro
-        self.seed = seed
-        #for ind in range(self.num_parallel):
-            #p = mp.Process(target=mp_sample, args=(self.pol, env, self.max_steps, self.max_epis, self.n_steps_global,
-             #                                      self.n_epis_global, self.epis, self.exec_flags[ind], self.deterministic_flag, ind, prepro, seed))
-           # p.start()
-            #self.processes.append(p)
+        for ind in range(self.num_parallel):
+            p = mp.Process(target=mp_sample, args=(self.pol, env, self.max_steps, self.max_epis, self.n_steps_global,
+                                                   self.n_epis_global, self.epis, self.exec_flags[ind], self.deterministic_flag, ind, prepro, seed))
+            p.start()
+            self.processes.append(p)
 
     def __del__(self):
-        #for p in self.processes:
-           # p.terminate()
-         print("hi")
+        for p in self.processes:
+            p.terminate()
 
     def sample(self, pol, max_epis=None, max_steps=None, deterministic=False):
         """
@@ -233,32 +232,6 @@ class EpiSampler(object):
         for exec_flag in self.exec_flags:
             exec_flag += 1
 
-        #while True:
-            #if all([exec_flag == 0 for exec_flag in self.exec_flags]):
-                #return list(self.epis)
-
-        env = self.env
-        max_steps = self.max_steps
-        n_steps_global = self.n_steps_global
-        n_epis_global = self.n_epis_global
-        epis = self.epis
-        exec_flag = 1
-        deterministic_flag = self.deterministic_flag
-        process_id = 1
-        prepro = self.prepro
-        seed = self.seed
-
-        np.random.seed(seed + process_id)
-        torch.manual_seed(seed + process_id)
-        torch.set_num_threads(1)
-
-        while max_steps > n_steps_global and max_epis > n_epis_global:
-            l, epi = one_epi(env, pol, deterministic_flag, prepro)
-            n_steps_global += l
-            n_epis_global += 1
-            print("max steps: ", n_steps_global)
-            print("step: ", n_steps_global)
-            epis.append(epi)
-            #print(epis)
-        return list(self.epis)
-
+        while True:
+            if all([exec_flag == 0 for exec_flag in self.exec_flags]):
+                return list(self.epis)

@@ -26,11 +26,13 @@ from machina.utils import measure, set_device
 
 from simple_net import PolNet, VNet, PolNetLSTM, VNetLSTM
 
+import panda_gym_env
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--log', type=str, default='garbage',
                     help='Directory name of log.')
 parser.add_argument('--env_name', type=str,
-                    default='Pendulum-v0', help='Name of environment.')
+                    default='panda_gym_env-v0', help='Name of environment.')
 parser.add_argument('--c2d', action='store_true',
                     default=False, help='If True, action is discretized.')
 parser.add_argument('--record', action='store_true',
@@ -38,18 +40,18 @@ parser.add_argument('--record', action='store_true',
 parser.add_argument('--seed', type=int, default=256)
 parser.add_argument('--max_epis', type=int,
                     default=1000000, help='Number of episodes to run.')
-parser.add_argument('--num_parallel', type=int, default=4,
+parser.add_argument('--num_parallel', type=int, default=1,
                     help='Number of processes to sample.')
 parser.add_argument('--cuda', type=int, default=-1, help='cuda device number.')
 
-parser.add_argument('--max_steps_per_iter', type=int, default=10000,
+parser.add_argument('--max_steps_per_iter', type=int, default=40,
                     help='Number of steps to use in an iteration.')
-parser.add_argument('--epoch_per_iter', type=int, default=10,
+parser.add_argument('--epoch_per_iter', type=int, default=4,
                     help='Number of epoch in an iteration')
-parser.add_argument('--batch_size', type=int, default=256)
-parser.add_argument('--pol_lr', type=float, default=3e-4,
+parser.add_argument('--batch_size', type=int, default=32)
+parser.add_argument('--pol_lr', type=float, default=1e-2,
                     help='Policy learning rate')
-parser.add_argument('--vf_lr', type=float, default=3e-4,
+parser.add_argument('--vf_lr', type=float, default=1e-2,
                     help='Value function learning rate')
 
 parser.add_argument('--rnn', action='store_true',
@@ -163,10 +165,10 @@ while args.max_epis > total_epi:
     total_step += step
     rewards = [np.sum(epi['rews']) for epi in epis]
     mean_rew = np.mean(rewards)
-    logger.record_results(args.log, result_dict, score_file,
-                          total_epi, step, total_step,
-                          rewards,
-                          plot_title=args.env_name)
+    #logger.record_results(args.log, result_dict, score_file,
+                          #total_epi, step, total_step,
+                          #rewards,
+                         # plot_title=args.env_name)
 
     if mean_rew > max_rew:
         torch.save(pol.state_dict(), os.path.join(

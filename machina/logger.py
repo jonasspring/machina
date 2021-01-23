@@ -1628,31 +1628,31 @@ def record_results(log_dir, result_dict, score_file,
     record_tabular('StepPerIter', step)
     record_tabular('TotalStep', total_step)
     dump_tabular()
-
-    if not async_plot:
-        for key, value in result_dict.items():
-            if hasattr(value, '__len__'):
-                fig_fname = plot_scores(score_file, key, 'TotalStep',
+    if False:
+        if not async_plot:
+            for key, value in result_dict.items():
+                if hasattr(value, '__len__'):
+                    fig_fname = plot_scores(score_file, key, 'TotalStep',
+                                            title=plot_title)
+                    log('Saved a figure as {}'.format(os.path.abspath(fig_fname)))
+            if rewards is not None:
+                fig_fname = plot_scores(score_file, 'Reward', 'TotalStep',
                                         title=plot_title)
                 log('Saved a figure as {}'.format(os.path.abspath(fig_fname)))
-        if rewards is not None:
-            fig_fname = plot_scores(score_file, 'Reward', 'TotalStep',
-                                    title=plot_title)
-            log('Saved a figure as {}'.format(os.path.abspath(fig_fname)))
-    else:
-        global _async_plot_flag
-        if not _async_plot_flag:
-            global plot_process
-            plot_process = mp.Pool(processes=1)
-            _async_plot_flag = True
-        if _running_processes:
-            p = _running_processes[0]
-            if p.ready():
-                del _running_processes[:]
-        if not _running_processes:
-            p = plot_process.apply_async(func=async_plot_scores, args=(
-                score_file, plot_title, result_dict, rewards))
-            _running_processes.append(p)
+        else:
+            global _async_plot_flag
+            if not _async_plot_flag:
+                global plot_process
+                plot_process = mp.Pool(processes=1)
+                _async_plot_flag = True
+            if _running_processes:
+                p = _running_processes[0]
+                if p.ready():
+                    del _running_processes[:]
+            if not _running_processes:
+                p = plot_process.apply_async(func=async_plot_scores, args=(
+                    score_file, plot_title, result_dict, rewards))
+                _running_processes.append(p)
 
 
 def record_results_bc(log_dir, result_dict, score_file,
